@@ -1,0 +1,53 @@
+sudo tee /opt/stacks/wordpress/docker-compose.yml >/dev/null <<'YAML'
+version: "3.9"
+name: wp-curiously
+
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    command: ["--transaction-isolation=READ-COMMITTED","--binlog-format=ROW"]
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      proxy:
+        aliases: [db]
+
+  wordpress:
+    image: wordpress:6.6-apache
+    # service name "wordpress" is what Caddy resolves on the shared network
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      WORDPRESS_CONFIG_EXTRA: |
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $_SERVER['HTTPS'] = 'on'; }
+        define('FORCE_SSL_ADMIN', true);
+        define('WP_HOME', '${WP_HOME}');
+        define('WP_SITEURL', '${WP_SITEURL}');
+        if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) { $_SERVER['HTTP_HOST'] = $_SERVER['HTTP_X_FORWARDED_HOST']; }
+        if (isset($_SERVER['HTTP_X_FORWARDED_URI']))  { $_SERVER['REQUEST_URI'] = $_SERVER['HTTP_X_FORWARDED_URI']; }
+    volumes:
+      - wp_data:/var/www/html
+    networks:
+      proxy:
+        aliases: [wordpress]
+
+networks:
+  proxy:
+    external: true
+    name: n8n-docker-caddy_default
+
+volumes:
+  db_data:
+  wp_data:
+YAML

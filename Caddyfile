@@ -1,0 +1,44 @@
+{
+    email bouly@blair.online
+}
+
+blairboulevard.online {
+    encode zstd gzip
+
+    @wpRoot path /wp-* /xmlrpc.php /wp_login.php
+    redir @wpRoot /curiously-caffeinated{uri} 308
+
+    handle_path /curiously-caffeinated* {
+        reverse_proxy blairboulevard_wordpress:80
+    }
+
+    handle {
+        reverse_proxy n8n-docker-caddy-n8n-1:5678
+    }
+}
+
+n8n.blairboulevard.online {
+    encode zstd gzip
+    reverse_proxy n8n-docker-caddy-n8n-1:5678
+}
+
+# --- OPTIONAL STATIC SITES ---
+ryomodular.com {
+    root * /usr/share/caddy/ryomodular
+    file_server
+}
+
+forher.website {
+    root * /usr/share/caddy/forher-website
+    file_server
+}
+
+whispr.dev {
+    root * /usr/share/caddy/whispr.dev
+    file_server
+}
+
+# Comment out this one until DNS is live
+# singapore.litehaus.online {
+#     reverse_proxy localhost:8080
+# }

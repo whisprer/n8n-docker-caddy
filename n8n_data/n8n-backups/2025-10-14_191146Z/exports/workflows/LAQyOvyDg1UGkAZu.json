@@ -1,0 +1,265 @@
+{
+  "createdAt": "2025-09-12T09:41:40.902Z",
+  "updatedAt": "2025-09-12T09:41:40.902Z",
+  "id": "LAQyOvyDg1UGkAZu",
+  "name": "My workflow 4",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "subreddit",
+              "value": "RomanceBooks"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c0b2f9f3-91a1-4ff2-8fd3-358a1d71f44e",
+      "name": "Choose Feed",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        608,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{`https://www.reddit.com/r/${$json.subreddit}/.rss`}}",
+        "options": {
+          "fullResponse": false
+        }
+      },
+      "id": "9b174dd8-f2bb-4805-b46a-e489cbdf6e00",
+      "name": "Fetch RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        832,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "output.title",
+              "value": "={{ $json.title || $json.text.split('\\n')[0].slice(0,120) }}"
+            },
+            {
+              "name": "output.body",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b7edb86d-6a39-463f-9545-d96b12cb24b1",
+      "name": "Shape AI Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1936,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyInterval"
+            }
+          ]
+        }
+      },
+      "id": "885b8843-e0b6-4e66-be1e-49f0436fac8f",
+      "name": "Schedule Trigger1",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        384,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "cfd44eae-8af0-4b67-9d6f-61b2b9d9fd17",
+      "name": "XML to JSON1",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "\n// Normalize RSS/Atom to a common shape\nconst out = [];\nconst data = items[0].json;\nfunction pick(v, ...paths){\n  for (const p of paths){\n    if (!v) continue;\n    const val = p.split('.').reduce((o,k)=>o?.[k], v);\n    if (val !== undefined) return val;\n  }\n  return undefined;\n}\nlet entries = [];\nif (data.feed?.entry) entries = data.feed.entry;\nelse if (data.rss?.channel?.item) entries = data.rss.channel.item;\nfor (const e of entries){\n  const title = pick(e, 'title._', 'title', 0) || '';\n  const link = pick(e, 'link.0.$.href', 'link.0.href', 'link', 0) || '';\n  const content = pick(e, 'content.0._', 'summary.0._', 'description.0', 'description') || '';\n  out.push({json: { title, url: link, content }});\n}\n// Safety: limit to 5\nreturn out.slice(0,5);\n"
+      },
+      "id": "581615da-12ee-4ba8-8702-2bc6f9bcefe6",
+      "name": "Extract Entries1",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "prompt",
+              "value": "You are writing for the blog \"Curious & Caffeinated\" (tone: warm, witty, insightful).\nRewrite the source into an original 700–900 word article for millennial women.\n- Keep it safe-for-work.\n- Create a catchy title.\n- Use subheadings, short paragraphs, and a crisp intro + takeaway.\n- Do NOT copy phrasing; synthesize and expand.\n\nSOURCE TITLE:\n\"{{$json.title}}\"\n\nSOURCE TEXT:\n{{$json.content}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1a0ce893-4f89-4742-acf6-29de2f7f7907",
+      "name": "Build GPT Prompt1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "940dc886-ce2d-4ed1-9d87-a09c3fccd60d",
+      "name": "OpenAI (rewrite)1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "title": "={{ $json[\"output.title\"] }}",
+        "additionalFields": {
+          "status": "draft"
+        }
+      },
+      "id": "e837ab5e-4a9a-4a23-9819-14cb48bd5d6f",
+      "name": "WordPress (create draft)1",
+      "type": "n8n-nodes-base.wordpress",
+      "typeVersion": 1,
+      "position": [
+        2144,
+        144
+      ]
+    }
+  ],
+  "connections": {
+    "Choose Feed": {
+      "main": [
+        [
+          {
+            "node": "Fetch RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch RSS": {
+      "main": [
+        [
+          {
+            "node": "XML to JSON1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape AI Output": {
+      "main": [
+        [
+          {
+            "node": "WordPress (create draft)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Choose Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML to JSON1": {
+      "main": [
+        [
+          {
+            "node": "Extract Entries1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Entries1": {
+      "main": [
+        [
+          {
+            "node": "Build GPT Prompt1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "83115007-f3d4-495b-af66-fcef14d10eae",
+  "triggerCount": 0,
+  "tags": [],
+  "shared": [
+    {
+      "createdAt": "2025-09-12T09:41:40.911Z",
+      "updatedAt": "2025-09-12T09:41:40.911Z",
+      "role": "workflow:owner",
+      "workflowId": "LAQyOvyDg1UGkAZu",
+      "projectId": "h7eTFCUIw35GWpq2",
+      "project": {
+        "createdAt": "2025-07-29T10:01:57.116Z",
+        "updatedAt": "2025-10-14T18:58:02.469Z",
+        "id": "h7eTFCUIw35GWpq2",
+        "name": "Blair Boulevard <phineaskfreak@yahoo.co.uk>",
+        "type": "personal",
+        "icon": null,
+        "description": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "createdAt": "2025-09-12T08:36:42.842Z",
+  "updatedAt": "2025-09-12T08:36:42.842Z",
+  "id": "Bxii3AbGn0WDRUS9",
+  "name": "My workflow 3",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a87c6e40-fe29-470d-8396-063e87044165",
+      "name": "When clicking ‘Test workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/TwoXChromosomes/top.json?limit=5&t=day",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (compatible; n8n-bot/1.0; +https://blairboulevard.online)"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json, */*;q=0.8"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cef6e571-deaf-470f-b796-389bad35490a",
+      "name": "Fetch Reddit (JSON)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        320,
+        0
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "functionCode": "// Map Reddit listing JSON to uniform items the WP node can use.\n// Input shape: { data: { children: [ { data: { title, url, author, selftext_html, created_utc, permalink } } ] } }\nconst out = [];\nconst root = items[0]?.json;\nconst list = root?.data?.children || [];\nfor (const child of list) {\n  const d = child.data || {};\n  const title = d.title || \"Untitled\";\n  const link = \"https://www.reddit.com\" + (d.permalink || \"\");\n  const when = new Date((d.created_utc || 0) * 1000).toISOString();\n  // Prefer the post body if present; otherwise link out.\n  const content = d.selftext_html\n    ? d.selftext_html\n    : `<p><a href=\"${link}\" target=\"_blank\" rel=\"noopener\">Read on Reddit</a></p>`;\n  out.push({\n    json: {\n      title,\n      body: content,\n      slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),\n      published_at: when,\n      author: d.author || \"unknown\",\n      source_url: link\n    }\n  });\n}\nreturn out.length ? out : [{json:{notice:\"No items returned\"}}];\n"
+      },
+      "id": "c220692d-8133-4613-8f84-7068f1bb07a8",
+      "name": "Map to posts",
+      "type": "n8n-nodes-base.function",
+      "position": [
+        608,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "title": "={{ $json.title }}",
+        "additionalFields": {
+          "content": "={{ $json.body }}",
+          "slug": "={{ $json.slug }}",
+          "status": "draft",
+          "format": "standard"
+        }
+      },
+      "id": "ffdf1c3a-6645-452f-98af-860fdcb5f448",
+      "name": "Save as Draft",
+      "type": "n8n-nodes-base.wordpress",
+      "position": [
+        960,
+        0
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Fetch Reddit (JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Reddit (JSON)": {
+      "main": [
+        [
+          {
+            "node": "Map to posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map to posts": {
+      "main": [
+        [
+          {
+            "node": "Save as Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "7e75169f-a6cb-4d5f-89e1-d75de9ba7a43",
+  "triggerCount": 0,
+  "tags": [],
+  "shared": [
+    {
+      "createdAt": "2025-09-12T08:36:42.849Z",
+      "updatedAt": "2025-09-12T08:36:42.849Z",
+      "role": "workflow:owner",
+      "workflowId": "Bxii3AbGn0WDRUS9",
+      "projectId": "h7eTFCUIw35GWpq2",
+      "project": {
+        "createdAt": "2025-07-29T10:01:57.116Z",
+        "updatedAt": "2025-10-14T18:58:02.469Z",
+        "id": "h7eTFCUIw35GWpq2",
+        "name": "Blair Boulevard <phineaskfreak@yahoo.co.uk>",
+        "type": "personal",
+        "icon": null,
+        "description": null
+      }
+    }
+  ]
+}

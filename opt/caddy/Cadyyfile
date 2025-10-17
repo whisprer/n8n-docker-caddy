@@ -1,0 +1,11 @@
+blairboulevard.online {
+    encode zstd gzip
+
+    @blog path /curiously-caffeinated/*
+
+    handle_path @blog {
+        reverse_proxy wordpress:80
+    }
+
+    # ...existing routes for the domain...
+}

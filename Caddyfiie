@@ -1,0 +1,22 @@
+# Backup the current file (on the host, saved inside the container's FS)
+docker exec -i caddy sh -lc 'cp -f /etc/caddy/Caddyfile /etc/caddy/Caddyfile.bak.$(date +%s) || true'
+
+# Replace with a minimal, TLS-enabled config
+docker exec -i caddy sh -lc 'cat > /etc/caddy/Caddyfile' <<'EOF'
+{
+  email bouly@blair.online
+}
+
+blairboulevard.online {
+  encode zstd gzip
+  respond "blairboulevard is alive (TLS OK)" 200
+}
+
+n8n.blairboulevard.online {
+  encode zstd gzip
+  respond "n8n placeholder is alive (TLS OK)" 200
+}
+EOF
+
+# Reload Caddy to apply it
+docker exec -it caddy caddy reload --config /etc/caddy/Caddyfile

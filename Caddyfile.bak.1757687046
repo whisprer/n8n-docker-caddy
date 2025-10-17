@@ -1,0 +1,56 @@
+{
+    email bouly@blair.online
+    email tom@whispr.dev
+    email cgpt@whsipr.dev
+    email kelly@gother.website
+}
+
+blairboulevard.online {
+    # This block handles all traffic to blairboulevard.online
+    handle {
+        # This sub-block handles the WordPress blog at the specific path
+        handle_path /curiously-caffeinated/* {
+            reverse_proxy wordpress:80
+        }
+        # This is the "catch-all" for all other requests to the main domain
+        reverse_proxy n8n:5678
+    }
+}
+
+n8n.blairboulevard.online {
+    reverse_proxy n8n:5678
+}
+
+ryommodular.com {
+    root * /usr/share/caddy/ryommodular
+    file_server
+}
+
+singapore.litehaus.online {
+    reverse_proxy localhost:8080
+}
+
+forher.website {
+    root * /usr/share/caddy/forher-website
+    file_server
+}
+
+whispr.dev {
+    root * /usr/share/caddy/whispr.dev
+    file_server
+}
+
+
+# redirect common WP admin paths that might hit root:
+@wpRoot path /wp-* /xmlrpc.php /wp-login.php
+redir @wpRoot /curiously-caffeinated{uri} 308
+
+# actual blog under subpath (use the real container name!)
+handle_path /curiously-caffeinated/* {
+  reverse_proxy wp-curiously-wordpress-1:80
+}
+
+n8n.blairboulevard.online {
+  encode zstd gzip
+  reverse_proxy n8n:5678
+}

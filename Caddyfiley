@@ -1,0 +1,55 @@
+{
+    email bouly@blair.online
+
+    email tom@whispr.dev
+    email cgpt@whsipr.dev
+
+    email kelly@forher.website
+}
+
+
+# 1. Configuration for the n8n subdomain
+n8n.blairboulevard.online {
+    # This block handles all traffic to n8n.blairboulevard.online
+    # It correctly reverse proxies to the n8n container on its port
+    reverse_proxy n8n:5678
+}
+
+# 2. The main domain, which needs to handle both n8n and the WordPress blog
+blairboulevard.online {
+    # This is the "catch-all" for all requests to the main domain
+    handle {
+        # This handles requests for the blog subdirectory
+        handle_path /curiously-caffeinated/* {
+            # This will proxy all requests to the WordPress container
+            # Note: You must ensure your WordPress container is running and accessible
+            # For this example, we assume its Docker service name is 'wordpress'
+            reverse_proxy wordpress:80
+    }
+        # This is the "catch-all" for all other requests to the main domain
+        # It must come *after* the specific handle_path block
+        reverse_proxy n8n:5678
+
+          handle {
+          # All other traffic to blairboulevard.online goes to the main n8n app
+}
+
+ryommodular.com {
+    root * /usr/share/caddy/ryommodular
+    file_server
+}
+
+singapore.litehaus.online {
+    reverse_proxy localhost:8080
+}
+
+forher.website {
+    root * /usr/share/caddy/forher-website
+    file_server
+}
+
+whispr.dev {
+    root * /usr/share/caddy/whispr.dev
+    file_server
+
+}

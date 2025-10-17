@@ -1,0 +1,26 @@
+# ----- WordPress over Docker (curiously-caffeinated) -----
+
+# Domain + path
+WP_DOMAIN=blairboulevard.online
+WP_PATH=/curiously-caffeinated
+
+# Database
+MYSQL_DATABASE=wp_curiously
+MYSQL_USER=wp_curiously_user
+MYSQL_PASSWORD=dont_forget_wordpressdb   # strong, change if you wish
+MYSQL_ROOT_PASSWORD=dont_forget_wordpress  # strong, change if you wish
+
+# WordPress admin bootstrap (used only on first run by the official image)
+WORDPRESS_DB_HOST=db:3306
+WORDPRESS_DB_USER=${MYSQL_USER}
+WORDPRESS_DB_PASSWORD=${MYSQL_PASSWORD}
+WORDPRESS_DB_NAME=${MYSQL_DATABASE}
+
+# Site URLs (subdirectory aware)
+WP_HOME=https://${WP_DOMAIN}${WP_PATH}
+WP_SITEURL=https://${WP_DOMAIN}${WP_PATH}
+
+# Optional: bump PHP upload limits via Apache env vars
+PHP_MEMORY_LIMIT=256M
+PHP_UPLOAD_MAX_FILESIZE=64M
+PHP_POST_MAX_SIZE=64M

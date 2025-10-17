@@ -1,0 +1,712 @@
+{
+  "createdAt": "2025-07-29T16:52:00.123Z",
+  "updatedAt": "2025-09-12T10:59:12.000Z",
+  "id": "NZ4oe9enye2zEsqs",
+  "name": "working01",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "0dd1c3cb-77a0-4c0f-8bf5-31cb8e73e937",
+      "name": "When clicking ‘Test workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        832,
+        384
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {
+          "timeout": 60000,
+          "maxRetries": 2
+        }
+      },
+      "id": "cc7d20e4-5fb3-4c6f-99c8-10d7c276cbed",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        2608,
+        864
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "CMStMrtISsVCz1CI",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "timeout": 60000,
+          "maxRetries": 2
+        }
+      },
+      "id": "903a0fc0-cc20-40d3-b36e-0ab191d8b379",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        3600,
+        560
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "CMStMrtISsVCz1CI",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "timeout": 60000,
+          "maxRetries": 2
+        }
+      },
+      "id": "5a8827ec-bf21-4a1a-8e93-0fb0c859f1f8",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        2608,
+        592
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "CMStMrtISsVCz1CI",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "=### Analyse the given content\n\n{{ $json.data.map(item => item.replace(/\\n/g, '')).join('\\n---\\n') }}",
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"array\",\n \"items\": {\n \"type\": \"object\",\n \t\"properties\": {\n \"characteristic\": { \"type\": \"string\" },\n \"description\": { \"type\": \"string\" },\n \"examples\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n }\n\t}\n}",
+        "options": {
+          "systemPromptTemplate": "You help identify and define a company or individual's \"brand voice\". Using the given content belonging to the company or individual, extract all voice characteristics from it along with description and examples demonstrating it."
+        }
+      },
+      "id": "2e37098f-3a23-4444-8ef2-c322f12e318b",
+      "name": "Extract Voice Characteristics",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "position": [
+        2608,
+        720
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "data"
+            }
+          ]
+        },
+        "options": {
+          "mergeLists": true
+        }
+      },
+      "id": "f3b8ef36-6299-4c43-a861-aaa5e62240a7",
+      "name": "Combine Articles",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        2368,
+        624
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "43f64260-e642-483e-b6b1-21b6c872bdbf",
+      "name": "Article Style & Brand Voice",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        2992,
+        592
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "title": "={{ $json.output.title }}",
+        "additionalFields": {
+          "content": "={{ $json.output.body }}",
+          "slug": "={{ $json.output.title.toSnakeCase() }}",
+          "status": "draft",
+          "format": "standard"
+        }
+      },
+      "id": "62e88789-3672-4f5c-a02d-9696313a7e0b",
+      "name": "Save as Draft",
+      "type": "n8n-nodes-base.wordpress",
+      "position": [
+        4048,
+        400
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "wordpressApi": {
+          "id": "GcNWRQ5jVSZkRUiD",
+          "name": "Wordpress account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 1. Import Existing Content\n[Read more about the HTML node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.html/)\n\nFirst, we'll need to gather existing content for the brand voice we want to replicate. This content can be blogs, social media posts or internal documents - the idea is to use this content to \"train\" our AI to produce content from the provided examples. One call out is that the quality and consistency of the content is important to get the desired results.\n\nIn this demonstration, we'll grab the latest blog posts off a corporate blog to use as an example. Since, the blog articles are likely consistent because of the source and narrower focus of the medium, it'll serve well to showcase this workflow.",
+        "height": 264,
+        "width": 606,
+        "color": 7
+      },
+      "id": "a3a0d3f8-2fcb-4cf6-9107-1bfe29e3686a",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1072,
+        256
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 2. Convert HTML to Markdown\n[Learn more about the Markdown node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.markdown)\n\nMarkdown is a great way to optimise the article data we're sending to the LLM because it reduces the amount of tokens required but keeps all relevant writing structure information.\n\nAlso useful to get Markdown output as a response because typically it's the format authors will write in.",
+        "height": 230,
+        "width": 434,
+        "color": 7
+      },
+      "id": "cd9e9c64-6a4a-4a32-9a0b-0d95e4e0f080",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2032,
+        320
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 3. Using AI to Analyse Article Structure and Writing Styles\n[Read more about the Basic LLM Chain node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.chainllm)\n\nOur approach is to first perform a high-level analysis of all available articles in order to replicate their content layout and writing styles. This will act as a guideline to help the AI to structure our future articles.",
+        "height": 233,
+        "width": 446,
+        "color": 7
+      },
+      "id": "7255ce95-a745-4cc1-aed6-7bd5dafa8330",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2576,
+        160
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data.join('\\n---\\n') }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Given the following one or more articles (which are separated by ---), describe how best one could replicate the common structure, layout, language and writing styles of all as aggregate."
+            }
+          ]
+        }
+      },
+      "id": "bf49da35-5841-461c-ba03-e0611eb5969e",
+      "name": "Capture Existing Article Structure",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        2608,
+        464
+      ],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "content": "## 4. Using AI to Extract Voice Characteristics and Traits\n[Read more about the Information Extractor node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.information-extractor/)\n\nSecond, we'll use AI to analysis the brand voice characteristics of the previous articles. This picks out the tone, style and choice of language used and identifies them into categories. These categories will be used as guidelines for the AI to keep the future article consistent in tone and voice. ",
+        "height": 253,
+        "width": 446,
+        "color": 7
+      },
+      "id": "b980aa75-0bac-4ac6-ae29-95d25718b948",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2928,
+        816
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 5. Automate On-Brand Articles Using AI\n[Read more about the Information Extractor node](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.information-extractor)\n\nFinally with this approach, we can feed both content and voice guidelines into our final LLM - our content generation agent - to produce any number of on-brand articles, social media posts etc.\n\nWhen it comes to assessing the output, note the AI does a pretty good job at simulating format and reusing common phrases and wording for the target article. However, this could become repetitive very quickly! Whilst AI can help speed up the process, a human touch may still be required to add a some variety.",
+        "height": 633,
+        "width": 626,
+        "color": 7
+      },
+      "id": "78c990da-8c3d-428c-a626-9346483bf8a2",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3312,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.instruction }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "title",
+              "description": "title of article",
+              "required": true
+            },
+            {
+              "name": "summary",
+              "description": "summary of article",
+              "required": true
+            },
+            {
+              "name": "body",
+              "description": "body of article",
+              "required": true
+            },
+            {
+              "name": "characteristics",
+              "description": "comma delimited string of characteristics chosen",
+              "required": true
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "=You are a blog content writer who writes using the following article guidelines. Write a content piece as requested by the user. Output the body as Markdown. Do not include the date of the article because the publishing date is not determined yet.\n\n## Brand Article Style\n{{ $('Article Style & Brand Voice').item.json.text }}\n\n##n Brand Voice Characteristics\n\nHere are the brand voice characteristic and examples you must adopt in your piece. Pick only the characteristic which make sense for the user's request. Try to keep it as similar as possible but don't copy word for word.\n\n|characteristic|description|examples|\n|-|-|-|\n{{\n$('Article Style & Brand Voice').item.json.output.map(item => (\n`|${item.characteristic}|${item.description}|${item.examples.map(ex => `\"${ex}\"`).join(', ')}|`\n)).join('\\n')\n}}"
+        }
+      },
+      "id": "25f56595-5303-4db7-adc3-60915f4d4043",
+      "name": "Content Generation Agent",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "position": [
+        3600,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 6. Save Draft to Wordpress\n[Learn more about the Wordpress node](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.wordpress/)\n\nTo close out the template, we'll simple save our generated article as a draft which could allow human team members to review and validate the article before publishing.",
+        "height": 173,
+        "width": 406,
+        "color": 7
+      },
+      "id": "a0eb843e-04dd-412d-b9c6-8dcf11cce451",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4048,
+        560
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Q. Do I need to analyse Brand Voice for every article?\nA. No! I would recommend storing the results of the AI's analysis and re-use for a list of planned articles rather than generate anew every time.",
+        "height": 120,
+        "width": 440,
+        "color": 5
+      },
+      "id": "fbabebc3-d1b2-4220-8cce-23ccfc68a206",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3488,
+        736
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### Q. Can I use other media than blog articles?\nA. Yes! This approach can use other source materials such as PDFs, as long as they can be produces in a text format to give to the LLM.",
+        "height": 120,
+        "width": 380,
+        "color": 5
+      },
+      "id": "148bf4cc-f3e5-4043-8363-4ccda95be170",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1632,
+        848
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Try It Out!\n### This n8n template demonstrates how to use AI to generate new on-brand written content by analysing previously published content.\n\nWith such an approach, it's possible to generate a steady stream of blog article drafts quickly with high consistency with your brand and existing content.\n\n### How it works\n* In this demonstration, the n8n.io blog is used as the source of existing published content and 5 of the latest articles are imported via the HTTP node.\n* The HTML node is extract the article bodies which are then converted to markdown for our LLMs.\n* We use LLM nodes to (1) understand the article structure and writing style and (2) identify the brand voice characteristics used in the posts.\n* These are then used as guidelines in our final LLM node when generating new articles.\n* Finally, a draft is saved to Wordpress for human editors to review or use as starting point for their own articles.\n\n### How to use\n* Update Step 1 to fetch data from your desired blog or change to fetch existing content in a different way.\n* Update Step 5 to provide your new article instruction. For optimal output, theme topics relevant to your brand.\n\n\n### Need Help?\nJoin the [Discord](https://discord.com/invite/XPKeKXeB7d) or ask in the [Forum](https://community.n8n.io/)!\n\nHappy Hacking!",
+        "height": 800,
+        "width": 400
+      },
+      "id": "e1d0ae37-3459-4229-b1ed-33d3e1f6bab6",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        176,
+        208
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2c7e2a28-30f9-4533-a394-a5e967ebf4ec",
+              "name": "instruction",
+              "type": "string",
+              "value": "=Prompt Idea: \"Develop a Blair Boulevard 'Curious & Caffeinated' article reflecting on [specific lifestyle observation, e.g., 'the quiet luxury aesthetic and its impact on everyday choices,' or 'the trend of \"main character energy\" and self-optimization,' or 'the allure of embracing simple routines in a chaotic world']. Explore the nuances of this observation, drawing insights from cross-sections of daily life and media. Maintain a generally jovial yet insightful tone, showcasing both sides of the coin if an 'argument' exists, and conclude with an open-ended question for reader contemplation.\"\n\nOverall Editorial Guidelines for Blair Boulevard\nWord Count: Aim for approximately 1000 words per article. This allows for in-depth exploration without becoming a lengthy academic paper, perfectly fitting the \"Medium-type article\" length.\n\nTone Markers:\n\nBalanced Perspective: Always strive to present both sides of an argument or differing viewpoints, even when expressing a strong personal opinion. Acknowledge complexity without getting bogged down in it.\n\nJovial where Relevant: Embrace a light, humorous, and spirited tone. Blair should sound like she's enjoying the conversation. However, maintain discretion: while generally bright, ensure the tone can shift to more serious or empathetic when discussing sensitive (though still light) aspects of human experience (e.g., navigating heartbreak, genuine social anxiety, etc.). Avoid excessive silliness.\n\nOpen Question Ending: Every article must conclude with a thought-provoking, open-ended question designed to encourage readers to reflect, share their own experiences (even if only mentally), or continue the \"conversation.\"\n\nVocabulary:\n\nRich & Complex, but Accessible: Blair is intelligent and well-read, so a sophisticated vocabulary is appropriate. This can include less common but precise words, intelligent phrasing, and varied sentence structures.\n\nEmbrace Colloquialism & Slang: This is crucial for her \"best friend over coffee\" vibe. Seamlessly blend higher-level vocabulary with contemporary slang, common idioms, and a dash of conversational looseness (e.g., \"totally,\" \"vibes,\" \"it's a whole thing\").\n\nOccasional Mild Swearing: A judicious and sparing use of mild swear words (e.g., \"damn,\" \"hell,\" \"bitchy\" if contextually appropriate for sassy commentary) can add to the authentic, candid feel without being crude or offensive. Use for emphasis or genuine expression, not gratuitously.\n\nStructure:\n\nClick-Bait Hook: Start with a strong, intriguing, and slightly sensationalized headline and opening paragraph designed to grab immediate attention. Make the reader need to know more.\n\nRelaxed & Chatty Flow: After the hook, quickly transition into a more conversational, lighter, and engaging tone. This is where Blair's personality truly shines, like a leisurely chat.\n\nObservational & Anecdotal: Weave in general observations, relatable (perhaps fictionalized) anecdotes, and cultural references to illustrate points.\n\nThoughtful Conclusion: End with a summary of insights, perhaps a touch of Blair's characteristic wisdom, and then the crucial open-ended question to leave readers pondering or discussing.\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cf2873c8-e0dc-4db2-921d-ed591c524005",
+      "name": "New Article Instruction",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        3408,
+        400
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "subreddit",
+              "value": "RomanceBooks"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7d3ed337-f12b-4898-a62c-caf7a3d828df",
+      "name": "Choose Feed",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{`https://www.reddit.com/r/${$json.subreddit}/.rss`}}",
+        "responseFormat": "string",
+        "options": {
+          "fullResponse": false
+        }
+      },
+      "id": "8150b166-440e-4796-90a8-b03730865041",
+      "name": "Fetch RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ce9f23f4-5bc9-4daf-8494-a107d134c7f6",
+      "name": "XML to JSON",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "\n// Normalize RSS/Atom to a common shape\nconst out = [];\nconst data = items[0].json;\nfunction pick(v, ...paths){\n  for (const p of paths){\n    if (!v) continue;\n    const val = p.split('.').reduce((o,k)=>o?.[k], v);\n    if (val !== undefined) return val;\n  }\n  return undefined;\n}\nlet entries = [];\nif (data.feed?.entry) entries = data.feed.entry;\nelse if (data.rss?.channel?.item) entries = data.rss.channel.item;\nfor (const e of entries){\n  const title = pick(e, 'title._', 'title', 0) || '';\n  const link = pick(e, 'link.0.$.href', 'link.0.href', 'link', 0) || '';\n  const content = pick(e, 'content.0._', 'summary.0._', 'description.0', 'description') || '';\n  out.push({json: { title, url: link, content }});\n}\n// Safety: limit to 5\nreturn out.slice(0,5);\n"
+      },
+      "id": "b3db1d6f-6aee-450a-b806-8b405a2e1845",
+      "name": "Extract Entries",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1856,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "prompt",
+              "value": "You are writing for the blog \"Curious & Caffeinated\" (tone: warm, witty, insightful).\nRewrite the source into an original 700–900 word article for millennial women.\n- Keep it safe-for-work.\n- Create a catchy title.\n- Use subheadings, short paragraphs, and a crisp intro + takeaway.\n- Do NOT copy phrasing; synthesize and expand.\n\nSOURCE TITLE:\n\"{{$json.title}}\"\n\nSOURCE TEXT:\n{{$json.content}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "86e4827e-49cf-4afc-93e4-65f9d73eed6a",
+      "name": "Build GPT Prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyInterval"
+            }
+          ]
+        }
+      },
+      "id": "9f67a2f0-db4f-473a-ae5c-3f4715b0e5db",
+      "name": "Schedule Trigger1",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        976,
+        624
+      ]
+    }
+  ],
+  "connections": {
+    "Combine Articles": {
+      "main": [
+        [
+          {
+            "node": "Capture Existing Article Structure",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Voice Characteristics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Voice Characteristics",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Generation Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Capture Existing Article Structure",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Article Instruction": {
+      "main": [
+        [
+          {
+            "node": "Content Generation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Generation Agent": {
+      "main": [
+        [
+          {
+            "node": "Save as Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Article Style & Brand Voice": {
+      "main": [
+        [
+          {
+            "node": "New Article Instruction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Voice Characteristics": {
+      "main": [
+        [
+          {
+            "node": "Article Style & Brand Voice",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Choose Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture Existing Article Structure": {
+      "main": [
+        [
+          {
+            "node": "Article Style & Brand Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Choose Feed": {
+      "main": [
+        [
+          {
+            "node": "Fetch RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch RSS": {
+      "main": [
+        [
+          {
+            "node": "XML to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML to JSON": {
+      "main": [
+        [
+          {
+            "node": "Extract Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Entries": {
+      "main": [
+        [
+          {
+            "node": "Build GPT Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Choose Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build GPT Prompt": {
+      "main": [
+        [
+          {
+            "node": "Combine Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "8248fb53-9422-4322-a26b-350f22cc1f2d",
+  "triggerCount": 0,
+  "tags": [],
+  "shared": [
+    {
+      "createdAt": "2025-07-29T16:52:00.131Z",
+      "updatedAt": "2025-07-29T16:52:00.131Z",
+      "role": "workflow:owner",
+      "workflowId": "NZ4oe9enye2zEsqs",
+      "projectId": "h7eTFCUIw35GWpq2",
+      "project": {
+        "createdAt": "2025-07-29T10:01:57.116Z",
+        "updatedAt": "2025-10-14T18:58:02.469Z",
+        "id": "h7eTFCUIw35GWpq2",
+        "name": "Blair Boulevard <phineaskfreak@yahoo.co.uk>",
+        "type": "personal",
+        "icon": null,
+        "description": null
+      }
+    }
+  ]
+}

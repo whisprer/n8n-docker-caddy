@@ -1,35 +1,64 @@
-version: "3.7"
+version: "3.9"
 
 services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    environment:
+      TZ: Etc/UTC
+      N8N_HOST: n8n.blairboulevard.online
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://n8n.blairboulevard.online/
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - wofl-net
+
   caddy:
     image: caddy:latest
+    container_name: caddy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
-      - ${DATA_FOLDER}/caddy_config:/config
-      - ${DATA_FOLDER}/caddy_config/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_config:/config
+    networks:
+      - wofl-net
 
-  n8n:
-    image: docker.n8n.io/n8nio/n8n
-    restart: always
-    ports:
-      - 5678:5678
-    environment:
-      - N8N_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=https
-      - NODE_ENV=production
-      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
-      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
-    volumes:
-      - n8n_data:/home/node/.n8n
-      - ${DATA_FOLDER}/local_files:/files
-      
 volumes:
-  caddy_data:
-    external: true
+  wp_data:
+  db_data:
   n8n_data:
-    external: true
+  caddy_data:
+  caddy_config:
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: yourpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: yourpassword
+    volumes:
+      - wofl_db_data:/var/lib/mysql
+    networks:
+      - wofl-net
+
+  wordpress:
+    image: wordpress:latest
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: yourpassword
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wofl_wordpress_data:/var/www/html
+    networks:
+      - wofl-net
