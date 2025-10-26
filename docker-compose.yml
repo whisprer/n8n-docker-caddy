@@ -1,64 +1,68 @@
 version: "3.9"
 
 services:
-  n8n:
-    image: n8nio/n8n:latest
-    restart: unless-stopped
-    environment:
-      TZ: Etc/UTC
-      N8N_HOST: n8n.blairboulevard.online
-      N8N_PORT: 5678
-      N8N_PROTOCOL: https
-      WEBHOOK_URL: https://n8n.blairboulevard.online/
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    volumes:
-      - n8n_data:/home/node/.n8n
-    networks:
-      - wofl-net
-
   caddy:
-    image: caddy:latest
+    image: caddy:2
     container_name: caddy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
-    networks:
-      - wofl-net
-
-volumes:
-  wp_data:
-  db_data:
-  n8n_data:
-  caddy_data:
-  caddy_config:
+    depends_on:
+      - wordpress
+      - n8n
 
   db:
-    image: mysql:8.0
+    image: mysql:8
+    container_name: wordpress_db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: yourpassword
+      MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: wordpress
-      MYSQL_USER: wpuser
-      MYSQL_PASSWORD: yourpassword
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: example
     volumes:
-      - wofl_db_data:/var/lib/mysql
-    networks:
-      - wofl-net
+      - db_data:/var/lib/mysql
 
   wordpress:
-    image: wordpress:latest
+    image: wordpress:php8.3-apache
     restart: unless-stopped
     environment:
-      WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_USER: wpuser
-      WORDPRESS_DB_PASSWORD: yourpassword
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: example
       WORDPRESS_DB_NAME: wordpress
     volumes:
-      - wofl_wordpress_data:/var/www/html
-    networks:
-      - wofl-net
+      - wp_data:/var/www/html
+    depends_on:
+      - db
+
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    restart: unless-stopped
+    environment:
+      - N8N_HOST=n8n.blairboulevard.online
+      - N8N_PORT=5678
+      - WEBHOOK_URL=https://n8n.blairboulevard.online/
+      - GENERIC_TIMEZONE=Europe/Paris
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n_data_restore:/home/node/.n8n
+
+volumes:
+  caddy_data:
+  caddy_config:
+  db_data:
+  wp_data:
+  n8n_data:
+
+networks:
+  default:
+    name: n8n-docker-caddy_default
+    driver: bridge

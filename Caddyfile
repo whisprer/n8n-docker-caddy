@@ -1,44 +1,75 @@
-{
-    email bouly@blair.online
-}
-
+# ==========================================================
+# Primary site: WordPress at /curiously-caffeinated
+# ==========================================================
 blairboulevard.online {
-    encode zstd gzip
+	*.whispr.dev, whispr.dev {
+		encode gzip
+		root * /var/www/html
+		php_fastcgi unix//run/php/php8.2-fpm.sock
+		file_server
 
-    @wpRoot path /wp-* /xmlrpc.php /wp_login.php
-    redir @wpRoot /curiously-caffeinated{uri} 308
+		@rest_api path /curiously-caffeinated/wp-json/*
+		reverse_proxy wordpress:80 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up Authorization {>Authorization}
+		}
 
-    handle_path /curiously-caffeinated* {
-        reverse_proxy blairboulevard_wordpress:80
-    }
+		# Route /curiously-caffeinated to WordPress container
+		handle_path /curiously-caffeinated/* {
+			reverse_proxy wordpress:80 {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up Authorization {>Authorization}
+			}
+		}
 
-    handle {
-        reverse_proxy n8n-docker-caddy-n8n-1:5678
-    }
-}
+		# General WordPress security headers
+		header {
+			Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+			X-Content-Type-Options "nosniff"
+			X-Frame-Options "SAMEORIGIN"
+			Referrer-Policy "no-referrer-when-downgrade"
+			Permissions-Policy "geolocation=(), microphone=(), camera=()"
+		}
 
-n8n.blairboulevard.online {
-    encode zstd gzip
-    reverse_proxy n8n-docker-caddy-n8n-1:5678
-}
+		log {
+			output stdout
+			format console
+		}
+	}
 
-# --- OPTIONAL STATIC SITES ---
-ryomodular.com {
-    root * /usr/share/caddy/ryomodular
-    file_server
-}
+	# ==========================================================
+	# n8n subdomain
+	# ==========================================================
+	n8n.blairboulevard.online {
+		encode gzip zstd
+		reverse_proxy n8n:5678 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
 
-forher.website {
-    root * /usr/share/caddy/forher-website
-    file_server
-}
+		log {
+			output stdout
+			format console
+		}
 
-whispr.dev {
-    root * /usr/share/caddy/whispr.dev
-    file_server
-}
+		header {
+			Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+			X-Content-Type-Options "nosniff"
+			Referrer-Policy "same-origin"
+		}
+	}
 
-# Comment out this one until DNS is live
-# singapore.litehaus.online {
-#     reverse_proxy localhost:8080
-# }
+	# ==========================================================
+	# Optional redirect www → root
+	# ==========================================================
+	www.blairboulevard.online {
+		redir https://blairboulevard.online{uri} permanent
+	}
